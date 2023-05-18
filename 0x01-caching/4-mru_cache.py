@@ -1,108 +1,39 @@
-#!/usr/bin/env fish
-python3 -m doctest -v (basename (status -f))
-exit
+#!/usr/bin/env python3
+"""Most Recently Used caching module.
 """
->>> MRUCache = __import__('4-mru_cache').MRUCache
->>> my_cache = MRUCache()
->>> my_cache.put("A", "Hello")
->>> my_cache.put("B", "World")
->>> my_cache.put("C", "Holberton")
->>> my_cache.put("D", "School")
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-B: World
-C: Holberton
-D: School
+from collections import OrderedDict
 
->>> print(my_cache.get("B"))
-World
+from base_caching import BaseCaching
 
->>> my_cache.put("E", "Battery")
-DISCARD: B
 
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-C: Holberton
-D: School
-E: Battery
+class MRUCache(BaseCaching):
+    """Represents an object that allows storing and
+    retrieving items from a dictionary with an MRU
+    removal mechanism when the limit is reached.
+    """
+    def __init__(self):
+        """Initializes the cache.
+        """
+        super().__init__()
+        self.cache_data = OrderedDict()
 
->>> my_cache.put("C", "Street")
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-C: Street
-D: School
-E: Battery
+    def put(self, key, item):
+        """Adds an item in the cache.
+        """
+        if key is None or item is None:
+            return
+        if key not in self.cache_data:
+            if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                mru_key, _ = self.cache_data.popitem(False)
+                print("DISCARD:", mru_key)
+            self.cache_data[key] = item
+            self.cache_data.move_to_end(key, last=False)
+        else:
+            self.cache_data[key] = item
 
->>> print(my_cache.get("A"))
-Hello
-
->>> print(my_cache.get("B"))
-None
-
->>> print(my_cache.get("C"))
-Street
-
->>> my_cache.put("F", "Mission")
-DISCARD: C
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-F: Mission
-
->>> my_cache.put("G", "San Francisco")
-DISCARD: F
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-G: San Francisco
-
->>> my_cache.put("H", "H")
-DISCARD: G
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-H: H
-
->>> my_cache.put("I", "I")
-DISCARD: H
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-I: I
-
->>> my_cache.put("J", "J")
-DISCARD: I
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-J: J
-
->>> my_cache.put("K", "K")
-DISCARD: J
-
->>> my_cache.print_cache()
-Current cache:
-A: Hello
-D: School
-E: Battery
-K: K
-
-"""
+    def get(self, key):
+        """Retrieves an item by key.
+        """
+        if key is not None and key in self.cache_data:
+            self.cache_data.move_to_end(key, last=False)
+        return self.cache_data.get(key, None)
